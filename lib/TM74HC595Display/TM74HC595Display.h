@@ -18,11 +18,14 @@ class TM74HC595Display
 	void digit4showZero(int n);
 	void digit2(int n, int port);
 	void digit2(int n, int port, int replay);
+	void timerIsr();
+	void clear();
 
   private:
     int _SCLK;
 	int _RCLK;
 	int _DIO;
+	int _DATA[4];
 };
  
 #endif

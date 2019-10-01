@@ -1,25 +1,24 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <GyverEncoder.h>
-#include <TM74HC595Display.h>
 #include <DHT.h>
-#define CLK 0
-#define DT 4
-#define SW 5
-Encoder enc1(CLK, DT, SW);
-int enc_value = 0;
+#include <TM74HC595Display.h>
+#include <GyverTimer.h>
 
+GTimer_ms potenTimer(300);
+long poten;
 
 int SCLK = 14;  //di5
-int RCLK = 12;  //di6
-int DIO = 13;   //di7
+int RCLK = 4;  //di2
+int DIO = 0;   //di3
 
 TM74HC595Display disp(SCLK, RCLK, DIO);
-uint8 screen = 1;
+GTimer_us dispTimer(1500);
+uint8 screen = 1; 
 //unsigned char LED_0F[29];
 
 DHT dht;
+int DHTPIN = 12; //di6
 float temp, hum = 0;
 // Update these with values suitable for your network.
 
@@ -54,6 +53,9 @@ void setup_wifi() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+
+
+
 }
 
 void reconnect() {
@@ -67,9 +69,9 @@ void reconnect() {
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("/outTopic", "hello world");
+      client.publish("/ESP8266", "Connected");
       // ... and resubscribe
-      client.subscribe("inTopic");
+      //client.subscribe("inTopic");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -87,17 +89,20 @@ void setup() {
   client.setServer(mqtt_server, 1883);
   //client.setCallback(callback);
 
-  enc1.setTickMode(AUTO);
-  enc1.setType(2);
-
-  pinMode(17, INPUT);
-  dht.setup(17);
+  dht.setup(DHTPIN);
   Serial.println(dht.getStatus());
+
 }
 
 void loop() {
   char dht_msg[50];
-  
+  char poten_msg[50];
+  if (potenTimer.isReady()) {
+    poten = constrain(analogRead(PIN_A0),0,1023);
+    poten = map(poten,0,1023,0,9999);
+    snprintf (poten_msg, 50, "{\"value\" : %ld}", poten);
+  }
+   
   if (!client.connected()) {
     reconnect();
   }
@@ -106,49 +111,45 @@ void loop() {
   long now = millis();
   if (now - lastMsg > 2000) {
     lastMsg = now;
-    ++value;
+    //++value;
     //snprintf (msg, 50, "value = %d", enc_value);
     //Serial.print("Publish message: ");
     //Serial.println(msg);
     //client.publish("/encoder", msg);
-    
-    temp = dht.getTemperature();
-    hum = dht.getHumidity();
-    snprintf (dht_msg, 50, "temp = %f; hum = %f", temp, hum);
+    if (dht.getStatus() == 0){
+      hum = dht.getHumidity();
+      temp = dht.getTemperature();
+      snprintf (dht_msg, 50, "{\"temp\" : %f; \"hum\" = %f}", temp, hum);
+    }else
+    {
+      snprintf (dht_msg, 50, dht.getStatusString());
+    }
     Serial.print("Publish message: ");
     Serial.println(dht_msg);
-    client.publish("/DHT22", dht_msg);
-    screen = (screen=1)?2:1;
-  }
+    client.publish("/ESP8266/DHT23", dht_msg);
 
-  if (enc1.isRight()) enc_value++;     	// если был поворот направо, увеличиваем на 1
-  if (enc1.isLeft()) enc_value--;	    // если был поворот налево, уменьшаем на 1
-  enc_value = constrain(enc_value, 0 , 9999);
+    Serial.print("Publish message: ");
+    Serial.println(poten_msg);
 
-  if (enc1.isTurn()) {       // если был совершён поворот (индикатор поворота в любую сторону)
-    Serial.println(enc_value);  // выводим значение при повороте
-  }
-
-
-  if (enc1.isClick()) {
+    client.publish("/ESP8266/Krutilka", poten_msg);
     screen=(screen+1)%3;
   }
 
   switch (screen)
   {
-  case 1:
+  case 0:
     disp.send(0x89, 0b1000);
     disp.digit2((int)hum, 0xb0001);
     break;
-  case 2:
+  case 1:
     disp.send(0x87, 0b1000);
     disp.digit2((int)temp, 0xb0001);
     break; 
   
   default:
-    disp.digit4(enc_value);
+    disp.digit4(poten);
     break;
   }
 
-
+  if (dispTimer.isReady()) disp.timerIsr(); //обновить дисплей
 }

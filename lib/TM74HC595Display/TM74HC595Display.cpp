@@ -46,7 +46,30 @@ TM74HC595Display::TM74HC595Display(int SCLK, int RCLK, int DIO)
   _LED_0F[26] = 0xC1; //U
   _LED_0F[27] = 0x91; //Y
   _LED_0F[28] = 0xFE; //hight -
+
+  clear();
 }
+
+void TM74HC595Display::timerIsr()
+{
+  send(_DATA[0]);
+  send(0b0001);
+  digitalWrite(_RCLK, LOW);
+  digitalWrite(_RCLK, HIGH);
+  send(_DATA[1]);
+  send(0b0010);
+  digitalWrite(_RCLK, LOW);
+  digitalWrite(_RCLK, HIGH);
+  send(_DATA[2]);
+  send(0b0100);
+  digitalWrite(_RCLK, LOW);
+  digitalWrite(_RCLK, HIGH);
+  send(_DATA[3]);
+  send(0b1000);
+  digitalWrite(_RCLK, LOW);
+  digitalWrite(_RCLK, HIGH);
+}
+
 
 
 void TM74HC595Display::send(unsigned char X)
@@ -128,4 +151,11 @@ void TM74HC595Display::digit2(int n, int port, int replay)
 void TM74HC595Display::digit2(int n, int port)
 {
 	digit2(n, port, 0);
+}
+
+void TM74HC595Display::clear(){
+  _DATA[0]= 0xFF;
+  _DATA[1]= 0xFF;
+  _DATA[2]= 0xFF;
+  _DATA[3]= 0xFF;
 }
