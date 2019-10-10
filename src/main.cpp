@@ -14,7 +14,7 @@ int DIO = 0;   //di3
 
 TM74HC595Display disp(SCLK, RCLK, DIO);
 GTimer_us dispTimer(1500);
-uint8 screen = 1; 
+uint8 screen = 1;
 //unsigned char LED_0F[29];
 
 DHT dht;
@@ -22,8 +22,8 @@ int DHTPIN = 12; //di6
 float temp, hum = 0;
 // Update these with values suitable for your network.
 
-const char* ssid = "WHITE HOUSE";
-const char* password = "donaldtrumP";
+const char* ssid = "Technolink15_2G";
+const char* password = "TL12345678";
 const char* mqtt_server = "185.228.232.60";
 
 WiFiClient espClient;
@@ -102,7 +102,7 @@ void loop() {
     poten = map(poten,0,1023,0,9999);
     snprintf (poten_msg, 50, "{\"value\" : %ld}", poten);
   }
-   
+
   if (!client.connected()) {
     reconnect();
   }
@@ -144,8 +144,8 @@ void loop() {
   case 1:
     disp.send(0x87, 0b1000);
     disp.digit2((int)temp, 0xb0001);
-    break; 
-  
+    break;
+
   default:
     disp.digit4(poten);
     break;
