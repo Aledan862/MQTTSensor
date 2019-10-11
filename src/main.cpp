@@ -24,7 +24,7 @@ float temp, hum = 0;
 
 const char* ssid = "Technolink15_2G";
 const char* password = "TL12345678";
-const char* mqtt_server = "185.228.232.60";
+const char* mqtt_server = "192.168.99.128";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -95,12 +95,13 @@ void setup() {
 }
 
 void loop() {
-  char dht_msg[50];
-  char poten_msg[50];
+  char dht_msg_t[100];
+  char dht_msg_h[100];
+  char poten_msg[100];
   if (potenTimer.isReady()) {
     poten = constrain(analogRead(PIN_A0),0,1023);
     poten = map(poten,0,1023,0,9999);
-    snprintf (poten_msg, 50, "{\"value\" : %ld}", poten);
+    snprintf (poten_msg, 100, "[{\"id\" : \"MQTTsensor.Device1.Rolling\", \"v\" = %ld}]", poten);
   }
 
   if (!client.connected()) {
@@ -119,19 +120,21 @@ void loop() {
     if (dht.getStatus() == 0){
       hum = dht.getHumidity();
       temp = dht.getTemperature();
-      snprintf (dht_msg, 50, "{\"temp\" : %f; \"hum\" = %f}", temp, hum);
+      snprintf (dht_msg_h, 100, "[{\"id\" : \"MQTTsensor.Device1.Humudity\", \"v\" = %f}]", hum);
+      snprintf (dht_msg_t, 100, "[{\"id\" : \"MQTTsensor.Device1.Temperature\", \"v\" = %f}]", temp);
     }else
     {
-      snprintf (dht_msg, 50, dht.getStatusString());
+      snprintf (dht_msg_t, 50, dht.getStatusString());
     }
     Serial.print("Publish message: ");
-    Serial.println(dht_msg);
-    client.publish("/ESP8266/DHT23", dht_msg);
-
+    Serial.println(dht_msg_t);
+    client.publish("MQTTsensor", dht_msg_t);
+    Serial.println(dht_msg_h);
+    client.publish("MQTTsensor", dht_msg_h);
     Serial.print("Publish message: ");
     Serial.println(poten_msg);
 
-    client.publish("/ESP8266/Krutilka", poten_msg);
+    client.publish("MQTTsensor", poten_msg);
     screen=(screen+1)%3;
   }
 
