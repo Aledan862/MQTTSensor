@@ -101,7 +101,7 @@ void loop() {
   if (potenTimer.isReady()) {
     poten = constrain(analogRead(PIN_A0),0,1023);
     poten = map(poten,0,1023,0,9999);
-    snprintf (poten_msg, 100, "[{\"id\" : \"MQTTsensor.Device1.Rolling\", \"v\" = %ld}]", poten);
+    snprintf (poten_msg, 100, "[{\"id\" : \"MQTTsensor.Device1.Rolling\", \"v\" : %ld}]", poten);
   }
 
   if (!client.connected()) {
@@ -120,8 +120,8 @@ void loop() {
     if (dht.getStatus() == 0){
       hum = dht.getHumidity();
       temp = dht.getTemperature();
-      snprintf (dht_msg_h, 100, "[{\"id\" : \"MQTTsensor.Device1.Humudity\", \"v\" = %f}]", hum);
-      snprintf (dht_msg_t, 100, "[{\"id\" : \"MQTTsensor.Device1.Temperature\", \"v\" = %f}]", temp);
+      snprintf (dht_msg_h, 100, "[{\"id\" : \"MQTTsensor.Device1.Humudity\", \"v\" : %f}]", hum);
+      snprintf (dht_msg_t, 100, "[{\"id\" : \"MQTTsensor.Device1.Temperature\", \"v\" : %f}]", temp);
     }else
     {
       snprintf (dht_msg_t, 50, dht.getStatusString());
